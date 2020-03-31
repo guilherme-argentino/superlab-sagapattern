@@ -1,0 +1,38 @@
+version: '2'
+services:
+  superlab_sagapattern-app:
+    image: superlab_sagapattern
+    environment:
+      - _JAVA_OPTIONS=-Xmx512m -Xms256m
+      - SPRING_PROFILES_ACTIVE=prod,swagger
+      - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED=true
+      - SPRING_DATA_CASSANDRA_CONTACTPOINTS=superlab_sagapattern-cassandra
+      - JHIPSTER_SLEEP=30 # gives time for other services to boot before the application
+      - KAFKA_BOOTSTRAPSERVERS=kafka:9092
+    ports:
+      - 8080:8080
+  superlab_sagapattern-cassandra:
+    extends:
+      file: cassandra-cluster.yml
+      service: superlab_sagapattern-cassandra
+  superlab_sagapattern-cassandra-node:
+    image: cassandra:3.11.5
+    environment:
+      - CASSANDRA_SEEDS=superlab_sagapattern-cassandra
+  superlab_sagapattern-cassandra-migration:
+    extends:
+      file: cassandra-migration.yml
+      service: superlab_sagapattern-cassandra-migration
+    environment:
+      - CREATE_KEYSPACE_SCRIPT=create-keyspace-prod.cql
+  kafka:
+    extends:
+      file: kafka.yml
+      service: kafka
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=kafka
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+  zookeeper:
+    extends:
+      file: kafka.yml
+      service: zookeeper
