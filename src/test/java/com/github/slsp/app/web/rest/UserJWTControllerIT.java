@@ -1,11 +1,13 @@
 package com.github.slsp.app.web.rest;
 
 import com.github.slsp.app.AbstractCassandraTest;
+import com.github.slsp.app.RedisTestContainerExtension;
 import com.github.slsp.app.SuperLabSagaPatternApp;
 import com.github.slsp.app.domain.User;
 import com.github.slsp.app.repository.UserRepository;
 import com.github.slsp.app.web.rest.vm.LoginVM;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,6 +32,7 @@ import static org.hamcrest.Matchers.not;
  */
 @AutoConfigureMockMvc
 @SpringBootTest(classes = SuperLabSagaPatternApp.class)
+@ExtendWith(RedisTestContainerExtension.class)
 public class UserJWTControllerIT extends AbstractCassandraTest {
 
     @Autowired

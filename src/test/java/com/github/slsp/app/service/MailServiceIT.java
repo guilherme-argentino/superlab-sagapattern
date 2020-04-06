@@ -3,11 +3,13 @@ package com.github.slsp.app.service;
 import com.github.slsp.app.config.Constants;
 
 import com.github.slsp.app.AbstractCassandraTest;
+import com.github.slsp.app.RedisTestContainerExtension;
 import com.github.slsp.app.SuperLabSagaPatternApp;
 import com.github.slsp.app.domain.User;
 import io.github.jhipster.config.JHipsterProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
@@ -42,6 +44,7 @@ import static org.mockito.Mockito.*;
  * Integration tests for {@link MailService}.
  */
 @SpringBootTest(classes = SuperLabSagaPatternApp.class)
+@ExtendWith(RedisTestContainerExtension.class)
 public class MailServiceIT extends AbstractCassandraTest {
 
     private static final String[] languages = {

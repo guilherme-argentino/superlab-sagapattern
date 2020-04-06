@@ -6,6 +6,10 @@ services:
       - _JAVA_OPTIONS=-Xmx512m -Xms256m
       - SPRING_PROFILES_ACTIVE=prod,swagger
       - MANAGEMENT_METRICS_EXPORT_PROMETHEUS_ENABLED=true
+      - JHIPSTER_CACHE_REDIS_SERVER=redis://superlab_sagapattern-redis:6379
+      - JHIPSTER_CACHE_REDIS_CLUSTER=false
+      # - JHIPSTER_CACHE_REDIS_SERVER=redis://superlab_sagapattern-redis:6379
+      # - JHIPSTER_CACHE_REDIS_CLUSTER=true
       - SPRING_DATA_CASSANDRA_CONTACTPOINTS=superlab_sagapattern-cassandra
       - JHIPSTER_SLEEP=30 # gives time for other services to boot before the application
       - KAFKA_BOOTSTRAPSERVERS=kafka:9092
@@ -25,6 +29,10 @@ services:
       service: superlab_sagapattern-cassandra-migration
     environment:
       - CREATE_KEYSPACE_SCRIPT=create-keyspace-prod.cql
+  superlab_sagapattern-redis:
+    extends:
+      file: redis.yml
+      service: superlab_sagapattern-redis
   kafka:
     extends:
       file: kafka.yml

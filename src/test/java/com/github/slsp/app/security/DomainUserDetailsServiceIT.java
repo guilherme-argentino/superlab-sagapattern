@@ -1,6 +1,7 @@
 package com.github.slsp.app.security;
 
 import com.github.slsp.app.AbstractCassandraTest;
+import com.github.slsp.app.RedisTestContainerExtension;
 import com.github.slsp.app.SuperLabSagaPatternApp;
 import com.github.slsp.app.domain.User;
 import com.github.slsp.app.repository.UserRepository;
@@ -8,6 +9,7 @@ import com.github.slsp.app.repository.UserRepository;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  * Integrations tests for {@link DomainUserDetailsService}.
  */
 @SpringBootTest(classes = SuperLabSagaPatternApp.class)
+@ExtendWith(RedisTestContainerExtension.class)
 public class DomainUserDetailsServiceIT extends AbstractCassandraTest {
 
     private static final String USER_ONE_LOGIN = "test-user-one";

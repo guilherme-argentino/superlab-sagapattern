@@ -1,6 +1,7 @@
 package com.github.slsp.app.service;
 
 import com.github.slsp.app.AbstractCassandraTest;
+import com.github.slsp.app.RedisTestContainerExtension;
 import com.github.slsp.app.SuperLabSagaPatternApp;
 import com.github.slsp.app.config.Constants;
 import com.github.slsp.app.domain.User;
@@ -10,6 +11,7 @@ import com.github.slsp.app.service.dto.UserDTO;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import java.util.List;
@@ -21,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Integration tests for {@link UserService}.
  */
 @SpringBootTest(classes = SuperLabSagaPatternApp.class)
+@ExtendWith(RedisTestContainerExtension.class)
 public class UserServiceIT extends AbstractCassandraTest {
 
     private static final String DEFAULT_LOGIN = "johndoe";

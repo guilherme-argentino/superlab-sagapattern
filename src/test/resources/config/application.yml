@@ -84,6 +84,9 @@ jhipster:
     logs: # Reports metrics in the logs
       enabled: true
       report-frequency: 60 # in seconds
+  cache:
+    redis:
+      server: ${redis.test.server}
 kafka:
   bootstrap-servers: localhost:9092
   consumer:
