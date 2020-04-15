@@ -1,0 +1,228 @@
+package com.github.slsp.app.web.rest;
+
+import com.github.slsp.app.AbstractCassandraTest;
+import com.github.slsp.app.RedisTestContainerExtension;
+import com.github.slsp.app.SuperLabSagaPatternApp;
+import com.github.slsp.app.domain.Job;
+import com.github.slsp.app.repository.JobRepository;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+/**
+ * Integration tests for the {@link JobResource} REST controller.
+ */
+@SpringBootTest(classes = SuperLabSagaPatternApp.class)
+@ExtendWith({ RedisTestContainerExtension.class, MockitoExtension.class })
+@AutoConfigureMockMvc
+@WithMockUser
+public class JobResourceIT extends AbstractCassandraTest {
+
+    private static final String DEFAULT_JOB_TITLE = "AAAAAAAAAA";
+    private static final String UPDATED_JOB_TITLE = "BBBBBBBBBB";
+
+    private static final Long DEFAULT_MIN_SALARY = 1L;
+    private static final Long UPDATED_MIN_SALARY = 2L;
+
+    private static final Long DEFAULT_MAX_SALARY = 1L;
+    private static final Long UPDATED_MAX_SALARY = 2L;
+
+    @Autowired
+    private JobRepository jobRepository;
+
+    @Autowired
+    private MockMvc restJobMockMvc;
+
+    private Job job;
+
+    /**
+     * Create an entity for this test.
+     *
+     * This is a static method, as tests for other entities might also need it,
+     * if they test an entity which requires the current entity.
+     */
+    public static Job createEntity() {
+        Job job = new Job()
+            .jobTitle(DEFAULT_JOB_TITLE)
+            .minSalary(DEFAULT_MIN_SALARY)
+            .maxSalary(DEFAULT_MAX_SALARY);
+        return job;
+    }
+    /**
+     * Create an updated entity for this test.
+     *
+     * This is a static method, as tests for other entities might also need it,
+     * if they test an entity which requires the current entity.
+     */
+    public static Job createUpdatedEntity() {
+        Job job = new Job()
+            .jobTitle(UPDATED_JOB_TITLE)
+            .minSalary(UPDATED_MIN_SALARY)
+            .maxSalary(UPDATED_MAX_SALARY);
+        return job;
+    }
+
+    @BeforeEach
+    public void initTest() {
+        jobRepository.deleteAll();
+        job = createEntity();
+    }
+
+    @Test
+    public void createJob() throws Exception {
+        int databaseSizeBeforeCreate = jobRepository.findAll().size();
+
+        // Create the Job
+        restJobMockMvc.perform(post("/api/jobs")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(TestUtil.convertObjectToJsonBytes(job)))
+            .andExpect(status().isCreated());
+
+        // Validate the Job in the database
+        List<Job> jobList = jobRepository.findAll();
+        assertThat(jobList).hasSize(databaseSizeBeforeCreate + 1);
+        Job testJob = jobList.get(jobList.size() - 1);
+        assertThat(testJob.getJobTitle()).isEqualTo(DEFAULT_JOB_TITLE);
+        assertThat(testJob.getMinSalary()).isEqualTo(DEFAULT_MIN_SALARY);
+        assertThat(testJob.getMaxSalary()).isEqualTo(DEFAULT_MAX_SALARY);
+    }
+
+    @Test
+    public void createJobWithExistingId() throws Exception {
+        int databaseSizeBeforeCreate = jobRepository.findAll().size();
+
+        // Create the Job with an existing ID
+        job.setId(UUID.randomUUID());
+
+        // An entity with an existing ID cannot be created, so this API call must fail
+        restJobMockMvc.perform(post("/api/jobs")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(TestUtil.convertObjectToJsonBytes(job)))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Job in the database
+        List<Job> jobList = jobRepository.findAll();
+        assertThat(jobList).hasSize(databaseSizeBeforeCreate);
+    }
+
+
+    @Test
+    public void getAllJobs() throws Exception {
+        // Initialize the database
+        job.setId(UUID.randomUUID());
+        jobRepository.save(job);
+
+        // Get all the jobList
+        restJobMockMvc.perform(get("/api/jobs"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.[*].id").value(hasItem(job.getId().toString())))
+            .andExpect(jsonPath("$.[*].jobTitle").value(hasItem(DEFAULT_JOB_TITLE)))
+            .andExpect(jsonPath("$.[*].minSalary").value(hasItem(DEFAULT_MIN_SALARY.intValue())))
+            .andExpect(jsonPath("$.[*].maxSalary").value(hasItem(DEFAULT_MAX_SALARY.intValue())));
+    }
+    
+    @Test
+    public void getJob() throws Exception {
+        // Initialize the database
+        job.setId(UUID.randomUUID());
+        jobRepository.save(job);
+
+        // Get the job
+        restJobMockMvc.perform(get("/api/jobs/{id}", job.getId()))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON_VALUE))
+            .andExpect(jsonPath("$.id").value(job.getId().toString()))
+            .andExpect(jsonPath("$.jobTitle").value(DEFAULT_JOB_TITLE))
+            .andExpect(jsonPath("$.minSalary").value(DEFAULT_MIN_SALARY.intValue()))
+            .andExpect(jsonPath("$.maxSalary").value(DEFAULT_MAX_SALARY.intValue()));
+    }
+
+    @Test
+    public void getNonExistingJob() throws Exception {
+        // Get the job
+        restJobMockMvc.perform(get("/api/jobs/{id}", UUID.randomUUID().toString()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void updateJob() throws Exception {
+        // Initialize the database
+        job.setId(UUID.randomUUID());
+        jobRepository.save(job);
+
+        int databaseSizeBeforeUpdate = jobRepository.findAll().size();
+
+        // Update the job
+        Job updatedJob = jobRepository.findById(job.getId()).get();
+        updatedJob
+            .jobTitle(UPDATED_JOB_TITLE)
+            .minSalary(UPDATED_MIN_SALARY)
+            .maxSalary(UPDATED_MAX_SALARY);
+
+        restJobMockMvc.perform(put("/api/jobs")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(TestUtil.convertObjectToJsonBytes(updatedJob)))
+            .andExpect(status().isOk());
+
+        // Validate the Job in the database
+        List<Job> jobList = jobRepository.findAll();
+        assertThat(jobList).hasSize(databaseSizeBeforeUpdate);
+        Job testJob = jobList.get(jobList.size() - 1);
+        assertThat(testJob.getJobTitle()).isEqualTo(UPDATED_JOB_TITLE);
+        assertThat(testJob.getMinSalary()).isEqualTo(UPDATED_MIN_SALARY);
+        assertThat(testJob.getMaxSalary()).isEqualTo(UPDATED_MAX_SALARY);
+    }
+
+    @Test
+    public void updateNonExistingJob() throws Exception {
+        int databaseSizeBeforeUpdate = jobRepository.findAll().size();
+
+        // Create the Job
+
+        // If the entity doesn't have an ID, it will throw BadRequestAlertException
+        restJobMockMvc.perform(put("/api/jobs")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(TestUtil.convertObjectToJsonBytes(job)))
+            .andExpect(status().isBadRequest());
+
+        // Validate the Job in the database
+        List<Job> jobList = jobRepository.findAll();
+        assertThat(jobList).hasSize(databaseSizeBeforeUpdate);
+    }
+
+    @Test
+    public void deleteJob() throws Exception {
+        // Initialize the database
+        job.setId(UUID.randomUUID());
+        jobRepository.save(job);
+
+        int databaseSizeBeforeDelete = jobRepository.findAll().size();
+
+        // Delete the job
+        restJobMockMvc.perform(delete("/api/jobs/{id}", job.getId())
+            .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNoContent());
+
+        // Validate the database contains one less item
+        List<Job> jobList = jobRepository.findAll();
+        assertThat(jobList).hasSize(databaseSizeBeforeDelete - 1);
+    }
+}
